@@ -120,13 +120,14 @@ Shader "Unlit/Water Sim"
                 float NdotL = saturate(dot(lightDir, -normal));
                 float3 camPos = _WorldSpaceCameraPos;
                 float3 camView = normalize(i.worldPos - camPos);
-                float3 viewReflect = reflect(camView, normal);
+                float3 viewReflect = normalize(camView - lightDir);
 
-                float specularFalloff = saturate(dot(viewReflect, lightDir));
+                float specularFalloff = saturate(dot(viewReflect, normal));
                 specularFalloff = pow(specularFalloff, _Shininess);
 
                 col.rgb = NdotL*_LightColor0.rgb + _Ambient + _BaseWaterColor;
                 col.rgb += specularFalloff*_LightColor0.rgb;
+                
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;
             }

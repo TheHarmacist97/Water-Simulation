@@ -41,7 +41,7 @@ public class WaterManager : MonoBehaviour
         {
             WaveData wave = waves[i];
             wave.direction = Random.insideUnitCircle.normalized;
-            wave.frequency = Random.Range(0.2f, 10f);
+            wave.frequency = Random.Range(0.2f, 5f);
             wave.amplitude = Random.Range(0.01f, 0.2f);
             wave.speed = Random.Range(0.4f, 3f);
             waves[i] = wave;
