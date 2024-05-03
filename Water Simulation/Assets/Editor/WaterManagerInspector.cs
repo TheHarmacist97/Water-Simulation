@@ -16,7 +16,7 @@ public class WaterManagerInspector : Editor
 
         GUILayout.BeginHorizontal();
             GUILayout.Label("Wave count");
-            waveCount = EditorGUILayout.IntSlider(waveCount, 1, 5);
+            waveCount = EditorGUILayout.IntSlider(waveCount, 1, 50);
         GUILayout.EndHorizontal();
 
         if(GUILayout.Button("Generate " + waveCount + " new wave" + (waveCount>1?"s":"")))

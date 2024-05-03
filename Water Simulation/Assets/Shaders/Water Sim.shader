@@ -5,6 +5,7 @@ Shader "Unlit/Water Sim"
         _MainTex ("Texture", 2D) = "white" {}
         _BaseWaterColor("Color of the water", color) = (1,1,1)
         _Ambient("Ambient Lighting", color) = (1,1,1)
+        _Shininess("Gloss", float) = 1.0
     }
     SubShader
     {
@@ -34,91 +35,98 @@ Shader "Unlit/Water Sim"
                 float2 uv : TEXCOORD0;
                 UNITY_FOG_COORDS(1)
                 float4 vertex : SV_POSITION;
-                float3 worldPos : TEXCOORD1;
+                float3 worldPos : TEXCOORD2;
             };
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
             float3 _BaseWaterColor;
-            float3 _Ambient; 
+            float3 _Ambient;
+            float _Shininess;
 
             struct waveData
             {
                 float2 dir;
                 float freq;
                 float amp;
-                float phi;
+                float speed;
                 //float sharpness;
             };
             uniform StructuredBuffer<waveData> _Waves;
             int _NumberOfWaves;
 
-            float GetHeight(waveData wave, float2 xz)
+            float GetHeight(waveData wave, float2 xz, float t)
             {
-                //float sinOut = sin(dot(wave.dir,xz)*wave.freq+_Time.y+wave.phi)
-                //float height = 2*wave.amp * pow()
-                float height = wave.amp * sin(dot(wave.dir,xz)*wave.freq + _Time.y*wave.phi);
-                return height;
+                return wave.amp * (sin(dot(xz, wave.dir)*wave.freq + t*wave.speed)*0.5+0.5);
             }
 
-            float GetSurfaceHeight(float3 worldPos)
+            float GetSurfaceHeight(float3 pos)
             {
                 float finalHeight = 0;
                 for(int iter = 0; iter<_NumberOfWaves; iter++)
                 {
-                    finalHeight += GetHeight(_Waves[iter], worldPos.xz);
+                    finalHeight += GetHeight(_Waves[iter], pos.xz, _Time.y);
                 }
                 return finalHeight;
             }
 
-            float GetWaveBinormal(waveData wave, float2 xz)
+            float GetWaveBinormal(waveData wave, float2 xz, float t)
             {
-                float mult = wave.freq*wave.dir.y*wave.amp;
-                float zComp = mult*cos(dot(wave.dir, xz)*wave.freq +_Time.y*wave.phi);
-                return zComp;
+                float yFactor = wave.amp * wave.dir.x * cos(dot(xz, wave.dir)*wave.freq + wave.speed*t);
+                return yFactor;
             }
 
-            float GetWaveTangent(waveData wave, float2 xz)
+            float GetWaveTangent(waveData wave, float2 xz, float t)
             {
-                float mult = wave.freq * wave.dir.y * wave.amp;
-                float zComp = mult * cos(dot(wave.dir, xz)*wave.freq +_Time.y*wave.phi);
-                return zComp;
+                float yFactor = wave.amp * wave.dir.y * cos(dot(xz, wave.dir)*wave.freq + wave.speed*t);
+                return yFactor;
             }
 
-            float3 GetSurfaceNormals(float3 worldPos)
+            float3 GetSurfaceNormal(float3 pos)
             {
-                float x = 0, y = 0;
+                float finalBinormal = 0;
+                float finalTangent = 0;
+
                 for(int iter = 0; iter<_NumberOfWaves; iter++)
                 {
-                    x += GetWaveBinormal(_Waves[iter],worldPos);
-                    y += GetWaveTangent(_Waves[iter],worldPos);
+                    finalBinormal += GetWaveBinormal(_Waves[iter], pos.xz, _Time.y);
+                    finalTangent += GetWaveTangent(_Waves[iter], pos.xz, _Time.y);
                 }
-                float3 finalNormal = normalize(float3(-x , 1.0, -y));
-                return finalNormal;
+                return normalize(float3(finalBinormal, -1, finalTangent));
             }
-
 
             v2f vert (appdata v)
             {
                 v2f o;
-                float3 worldPos = mul( unity_ObjectToWorld,v.vertex);
+                float3 worldPos = mul(unity_ObjectToWorld, v.vertex);
+                o.worldPos = worldPos;
+
                 float finalHeight = GetSurfaceHeight(worldPos);
                 v.vertex.y += finalHeight;
-                o.worldPos = worldPos;
+
+
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+
                 UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
             }
 
             fixed4 frag (v2f i) : SV_Target
-            {
-                // sample the texture
-                float3 normals = GetSurfaceNormals(i.worldPos); 
-                float NdotL = dot(_WorldSpaceLightPos0.xyz, normals);
-                float3 directLight = _LightColor0.rgb*NdotL;
-                fixed4 col = NdotL;
-                // apply fog
+            {   
+                fixed4 col = 1.0;
+                float3 normal = GetSurfaceNormal(i.worldPos);
+                float3 lightDir = _WorldSpaceLightPos0.xyz;
+                float NdotL = saturate(dot(lightDir, -normal));
+                float3 camPos = _WorldSpaceCameraPos;
+                float3 camView = normalize(i.worldPos - camPos);
+                float3 viewReflect = reflect(camView, normal);
+
+                float specularFalloff = saturate(dot(viewReflect, lightDir));
+                specularFalloff = pow(specularFalloff, _Shininess);
+
+                col.rgb = NdotL*_LightColor0.rgb + _Ambient + _BaseWaterColor;
+                col.rgb += specularFalloff*_LightColor0.rgb;
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;
             }

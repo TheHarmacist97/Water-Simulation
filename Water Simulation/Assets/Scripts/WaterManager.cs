@@ -1,8 +1,5 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 public class WaterManager : MonoBehaviour
@@ -44,8 +41,8 @@ public class WaterManager : MonoBehaviour
         {
             WaveData wave = waves[i];
             wave.direction = Random.insideUnitCircle.normalized;
-            wave.frequency = Random.Range(0.1f, 5f);
-            wave.amplitude = Random.Range(0.01f, 0.5f);
+            wave.frequency = Random.Range(0.2f, 10f);
+            wave.amplitude = Random.Range(0.01f, 0.2f);
             wave.speed = Random.Range(0.4f, 3f);
             waves[i] = wave;
         }
@@ -55,7 +52,7 @@ public class WaterManager : MonoBehaviour
 public struct WaveData
 {
     public Vector2 direction;
-    [Range(0.1f, 5f)] public float frequency;
+    [Range(0.2f, 10f)] public float frequency;
     public float amplitude;
     public float speed;
     //public float sharpness;
