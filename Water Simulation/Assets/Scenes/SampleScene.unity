@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.1807302, g: 0.22174513, b: 0.2810958, a: 1}
+  m_IndirectSpecularColor: {r: 0.16955063, g: 0.20143612, b: 0.23608276, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -568,7 +568,7 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0.8089584, b: 0.7254902, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
@@ -627,13 +627,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.14867245, y: 0, z: 0, w: 0.9888865}
+  m_LocalRotation: {x: -0.076662436, y: -0.03827488, z: 0.0029450897, w: -0.99631786}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 17.1, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 8.8, y: -355.6, z: 0}
 --- !u!114 &410087042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1402,22 +1402,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   waves:
-  - direction: {x: -0.9890525, y: -0.14756437}
-    frequency: 0.45716363
-    amplitude: 0.13341714
-    speed: 2.4092555
-  - direction: {x: 0.84815484, y: 0.5297483}
-    frequency: 4.0765576
-    amplitude: 0.114586
-    speed: 1.9553874
-  - direction: {x: 0.22905315, y: -0.9734139}
-    frequency: 0.78287446
-    amplitude: 0.10364811
-    speed: 1.65864
-  - direction: {x: 0.96074843, y: 0.27742103}
-    frequency: 2.2285256
-    amplitude: 0.011653841
-    speed: 0.5668411
+  - direction: {x: -0.34852156, y: 0.93730074}
+    frequency: 2.758788
+    amplitude: 0.021413647
+    speed: 3.88
+  - direction: {x: 0.9840749, y: -0.17775445}
+    frequency: 0.5685129
+    amplitude: 0.19745114
+    speed: 2.180166
+  - direction: {x: 0.09204929, y: -0.9957545}
+    frequency: 0.99634516
+    amplitude: 0.025385985
+    speed: 1.5085194
+  - direction: {x: -0.91316694, y: -0.40758574}
+    frequency: 4.673155
+    amplitude: 0.16139065
+    speed: 2.1
+  - direction: {x: -0.95526904, y: 0.2957383}
+    frequency: 1.5491861
+    amplitude: 0.19739279
+    speed: 0.97765255
   mat: {fileID: 2100000, guid: 278af414cae7622469ecaa8e7e40870a, type: 2}
 --- !u!1001 &1447919628
 PrefabInstance:
