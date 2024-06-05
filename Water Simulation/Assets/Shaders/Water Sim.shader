@@ -6,6 +6,7 @@ Shader "Unlit/Water Sim"
         _BaseWaterColor("Color of the water", color) = (1,1,1)
         _Ambient("Ambient Lighting", color) = (1,1,1)
         _Shininess("Gloss", float) = 1.0
+        _Reflectance("Reflectance", float) = 1.0
     }
     SubShader
     {
@@ -24,6 +25,8 @@ Shader "Unlit/Water Sim"
             #include "UnityCG.cginc"
             #include "UnityLightingCommon.cginc"
 
+            static const float e = 2.718281828459;
+
             struct appdata
             {
                 float4 vertex : POSITION;
@@ -36,6 +39,7 @@ Shader "Unlit/Water Sim"
                 UNITY_FOG_COORDS(1)
                 float4 vertex : SV_POSITION;
                 float3 worldPos : TEXCOORD2;
+                float height : TEXCOORD3;
             };
 
             sampler2D _MainTex;
@@ -43,6 +47,7 @@ Shader "Unlit/Water Sim"
             float3 _BaseWaterColor;
             float3 _Ambient;
             float _Shininess;
+            float _Reflectance;
 
             struct waveData
             {
@@ -50,14 +55,16 @@ Shader "Unlit/Water Sim"
                 float freq;
                 float amp;
                 float speed;
-                //float sharpness;
+                float sharpness;
             };
             uniform StructuredBuffer<waveData> _Waves;
             int _NumberOfWaves;
 
             float GetHeight(waveData wave, float2 xz, float t)
             {
-                return wave.amp * (sin(dot(xz, wave.dir)*wave.freq + t*wave.speed)*0.5+0.5);
+                float description = dot(xz, wave.dir)*wave.freq + t*wave.speed;
+                float sinWave = sin(description); 
+                return wave.amp*pow(e, sinWave-wave.sharpness);
             }
 
             float GetSurfaceHeight(float3 pos)
@@ -70,27 +77,31 @@ Shader "Unlit/Water Sim"
                 return finalHeight;
             }
 
-            float GetWaveBinormal(waveData wave, float2 xz, float t)
+            float GetWaveBinormal(waveData wave, float2 xz, float t, float height)
             {
-                float yFactor = wave.amp * wave.dir.x * cos(dot(xz, wave.dir)*wave.freq + wave.speed*t);
+                float description = dot(xz, wave.dir)*wave.freq + t*wave.speed;
+                float cosWave = cos(description);
+                float yFactor = wave.amp * wave.dir.x * wave.freq * cosWave * height;
                 return yFactor;
             }
 
-            float GetWaveTangent(waveData wave, float2 xz, float t)
+            float GetWaveTangent(waveData wave, float2 xz, float t, float height)
             {
-                float yFactor = wave.amp * wave.dir.y * cos(dot(xz, wave.dir)*wave.freq + wave.speed*t);
+                float description = dot(xz, wave.dir)*wave.freq + t*wave.speed;
+                float cosWave = cos(description);
+                float yFactor = wave.amp * wave.dir.y * wave.freq * cosWave * height;
                 return yFactor;
             }
 
-            float3 GetSurfaceNormal(float3 pos)
+            float3 GetSurfaceNormal(float3 pos, float height)
             {
                 float finalBinormal = 0;
                 float finalTangent = 0;
 
                 for(int iter = 0; iter<_NumberOfWaves; iter++)
                 {
-                    finalBinormal += GetWaveBinormal(_Waves[iter], pos.xz, _Time.y);
-                    finalTangent += GetWaveTangent(_Waves[iter], pos.xz, _Time.y);
+                    finalBinormal += GetWaveBinormal(_Waves[iter], pos.xz, _Time.y, height);
+                    finalTangent += GetWaveTangent(_Waves[iter], pos.xz, _Time.y, height);
                 }
                 return normalize(float3(finalBinormal, -1, finalTangent));
             }
@@ -103,7 +114,7 @@ Shader "Unlit/Water Sim"
 
                 float finalHeight = GetSurfaceHeight(worldPos);
                 v.vertex.y += finalHeight;
-
+                o.height = finalHeight;
 
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
@@ -115,7 +126,7 @@ Shader "Unlit/Water Sim"
             fixed4 frag (v2f i) : SV_Target
             {   
                 fixed4 col = 1.0;
-                float3 normal = GetSurfaceNormal(i.worldPos);
+                float3 normal = GetSurfaceNormal(i.worldPos, i.height);
                 float3 lightDir = _WorldSpaceLightPos0.xyz;
                 float NdotL = saturate(dot(lightDir, -normal));
                 float3 camPos = _WorldSpaceCameraPos;
@@ -123,10 +134,10 @@ Shader "Unlit/Water Sim"
                 float3 viewReflect = normalize(camView - lightDir);
 
                 float specularFalloff = saturate(dot(viewReflect, normal));
-                specularFalloff = pow(specularFalloff, _Shininess);
+                specularFalloff = pow(specularFalloff, _Shininess)*_Reflectance;
 
                 col.rgb = NdotL*_LightColor0.rgb + _Ambient + _BaseWaterColor;
-                col.rgb += specularFalloff*_LightColor0.rgb;
+                col.rgb += NdotL*specularFalloff*_LightColor0.rgb;
                 
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;
